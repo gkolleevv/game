@@ -9,7 +9,6 @@ export class GameController {
 
     @Get()
     getSymbols() {
-        console.log('Pesho')
         return this.gameService.getSpinData();
     }
     //

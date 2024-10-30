@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import {WalletService} from "../wallet/wallet.service";
 
 export interface GameSymbol {
     star: string;
@@ -23,6 +24,9 @@ export class GameService {
         upper: '^'
     }
 
+    constructor(private walletService: WalletService) {
+    }
+
 
     getSpinData() {
         this.elements.forEach((row, index) => {
@@ -30,20 +34,38 @@ export class GameService {
                 this.elements[index][i] = this.getRandomSymbol(this.symbols);
             })
         });
-        return this.elements;
+        this.checkForWinning();
+        return {
+            symbolElements: this.elements,
+            budget: this.walletService.budget,
+            bets: this.walletService.bets
+        };
     }
 
-    // findOne(id: number) {
-    //     const user = this.users.find(user => user.id === id)
-    //
-    //     if (!user) throw new NotFoundException('User Not Found')
-    //
-    //     return user
-    // }
+
+    checkForWinning() {
+        let winning = false;
+        this.elements.forEach((row, index) => {
+            if (row[index] === row[index + 1] && row[index] === row[index + 2]) {
+                this.walletService.budget = this.walletService.currentBet * 5 + this.walletService.budget;
+                winning = true;
+            }
+        });
+        if (!winning) {
+            this.walletService.budget = this.walletService.budget - this.walletService.currentBet;
+            this.walletService.bets = {...this.walletService.bets,
+                totalBets: ++this.walletService.bets.totalBets,
+                loosingBets: ++this.walletService.bets.loosingBets};
+        } else {
+            this.walletService.bets = {...this.walletService.bets,
+                totalBets: ++this.walletService.bets.totalBets,
+                winningBets: ++this.walletService.bets.winningBets};
+        }
+    }
+
 
     getRandomSymbol(obj: GameSymbol): string {
         const el = Object.keys(obj)[(Math.random() * Object.keys(obj).length) | 0];
-        // @ts-ignore
-        return obj[el] as any;
+        return obj[el];
     }
 }
